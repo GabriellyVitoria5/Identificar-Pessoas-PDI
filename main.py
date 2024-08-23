@@ -1,6 +1,7 @@
 import cv2
 import tkinter as tk
 from tkinter import filedialog
+import numpy as np
 
 def iniciar_captura_wifi():
     # Inicia a captura via Wi-Fi
@@ -16,19 +17,31 @@ def escolher_video():
         exibir_video(captura)
 
 def exibir_video(captura):
+    
     if not captura.isOpened():
         print("Não foi possível abrir a captura de vídeo.")
         return
+    
+    # subtrair fundo
+    subtrator_fundo = cv2.createBackgroundSubtractorMOG2() 
 
     while captura.isOpened():
-        sucesso, quadro = captura.read()
+        sucesso, frame = captura.read()
 
         try:
             if not sucesso:
-                print("Falha ao capturar o quadro")
                 break
 
-            cv2.imshow("Video", cv2.resize(quadro, (600, 400)))
+            # com o frame capturado, temos:
+            #
+            # 1° problema: separar objetos (pessoas e animais) do fundo/cenário
+            #   - solução 1: usar subtração para diferenciar mudanças de um frame para outro (movimento das pessoas)
+            #   - solução 2: usar função de subtrator de fundo do opencv (usa distribuições gaussianas e é bom para lidar com sombra dos aobjetos)
+
+            aplicar_sibtrator_fundo = subtrator_fundo.apply(frame) 
+
+            cv2.imshow("Video", cv2.resize(frame, (600, 400)))
+            cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_sibtrator_fundo, (600, 400)))
 
             tecla = cv2.waitKey(1)
             if tecla == ord('q') or cv2.getWindowProperty("Video", cv2.WND_PROP_VISIBLE) < 1:
