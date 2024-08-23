@@ -46,11 +46,22 @@ def exibir_video(captura):
             operador_abertura = cv2.morphologyEx(aplicar_subtrator_fundo, cv2.MORPH_OPEN, elemento_estruturante)
 
             # 3° problema: identificar pessoas
-            #   - solução: ?
+            #   - solução: encontrar bordar e cotornos usando algoritmo de Canny
+
+            bordas = cv2.Canny(operador_abertura, 50, 150)
+            contornos, _ = cv2.findContours(bordas, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            frame_com_borda = frame
+
+            # filtrar contornos com base na área
+            for contorno in contornos:
+                if cv2.contourArea(contorno) > 200:  
+                    x, y, largura, altura = cv2.boundingRect(contorno)
+                    cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
 
             cv2.imshow("Video", cv2.resize(frame, (600, 400)))
             cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (600, 400)))
             cv2.imshow('Video separando objetos do fundo sem ruido', cv2.resize(operador_abertura, (600, 400)))
+            cv2.imshow('Video com borda', cv2.resize(frame_com_borda, (600, 400)))
 
             tecla = cv2.waitKey(1)
             if tecla == ord('q') or cv2.getWindowProperty("Video", cv2.WND_PROP_VISIBLE) < 1:
@@ -65,7 +76,7 @@ def exibir_video(captura):
 
 # configuração da interface gráfica
 janela_principal = tk.Tk()
-janela_principal.title("Escolha a fonte de vídeo")
+janela_principal.title("Tipo de captura")
 janela_principal.geometry("300x100")
 
 # botão para iniciar captura via wi-Fi
