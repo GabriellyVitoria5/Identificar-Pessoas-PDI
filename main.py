@@ -22,7 +22,7 @@ def exibir_video(captura):
         return
     
     # subtrair fundo
-    subtrator_fundo = cv2.createBackgroundSubtractorMOG2() 
+    subtrator_fundo = cv2.createBackgroundSubtractorKNN() 
 
     while captura.isOpened():
         sucesso, frame = captura.read()
@@ -54,13 +54,58 @@ def exibir_video(captura):
 
             # filtrar contornos com base na área
             for contorno in contornos:
-                if cv2.contourArea(contorno) > 200:  
+
+                # 4° problema: diferenciar contornos entre pessoas, crianças e animais
+                #   - solução: usar a área, altura e largura (proporcao) do contorno
+
+                area = cv2.contourArea(contorno)
+                if area > 200: # exlcuir áreas de valores muito pequenos
                     x, y, largura, altura = cv2.boundingRect(contorno)
+                    proporcao = largura / float(altura) 
+                    #print(largura, altura)
+                    #print(proporcao)
+                    #print(area)
+                    #print("\n")
+
+                    # verificar as proposções e áreas (principalmente a área)!!!!!!!!!!!
+
+                    # Tabela de proporções: 
+                    #
+                    # 1° caso: proporcao entre 0 e 1 -> altura é maior, valores altos indicam altura e largula próximos
+                    # 2° caso: proporcao maior igual que 1 -> largura é maior, valores altos indicam larguras grandes
+                    #
+                    # adultos: tendem ao 1° caso com valores baixos para médios
+                    # crianças: temdem ao 1° caso com valores médios para altos
+                    # animais: tendem ao 2° caso com valores baixos
+                    # 
+                    # 1° caso:
+                    #   - proporção para adultos será: 0.2 < prop. < 0.65, e area > 1000
+                    #   - proporção para crianças será: 0.66 < prop. < 0.8, e 800 < area > 1000
+                    #
+                    # 2° caso:
+                    #   - proporção para animais será: 1 < prop. < 2.5, e 200 < area < 400
+
+                    if (area > 400) and (0.2 < proporcao < 0.65):
+                        print("Adulto")
+                        label = "Adulto"
+                        cor = (0, 255, 0)  # Verde
+                        cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), cor, 2)
+                    elif (area > 400) and (0.65 <= proporcao < 0.7):
+                        print("Criança")
+                        label = "Criança"
+                        cor = (255, 255, 0)  # Amarelo
+                        cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), cor, 2)
+                    elif (area < 200 and area < 400) and (1 < proporcao < 2.5):
+                        print("Animal")
+                        label = "Animal"
+                        cor = (255, 0, 0)  # Azul
+                        cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), cor, 2)
+
                     cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
 
             cv2.imshow("Video", cv2.resize(frame, (600, 400)))
             cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (600, 400)))
-            cv2.imshow('Video separando objetos do fundo sem ruido', cv2.resize(operador_abertura, (600, 400)))
+            cv2.imshow('Video tratado com operador aberto', cv2.resize(operador_abertura, (600, 400)))
             cv2.imshow('Video com borda', cv2.resize(frame_com_borda, (600, 400)))
 
             tecla = cv2.waitKey(1)
