@@ -38,10 +38,17 @@ def exibir_video(captura):
             #   - solução 1: usar subtração para diferenciar mudanças de um frame para outro (movimento das pessoas)
             #   - solução 2: usar função de subtrator de fundo do opencv (usa distribuições gaussianas e é bom para lidar com sombra dos aobjetos)
 
-            aplicar_sibtrator_fundo = subtrator_fundo.apply(frame) 
+            aplicar_subtrator_fundo = subtrator_fundo.apply(frame) 
+
+            # 2° problema: ruídos no video
+            #   - solução: usar operador morfológico de abertura
+
+            elemento_estruturante = np.ones((5,5),np.uint8) # filtro 5x5
+            operador_abertura = cv2.morphologyEx(aplicar_subtrator_fundo, cv2.MORPH_OPEN, elemento_estruturante)
 
             cv2.imshow("Video", cv2.resize(frame, (600, 400)))
-            cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_sibtrator_fundo, (600, 400)))
+            cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (600, 400)))
+            cv2.imshow('Video separando objetos do fundo sem ruido', cv2.resize(operador_abertura, (600, 400)))
 
             tecla = cv2.waitKey(1)
             if tecla == ord('q') or cv2.getWindowProperty("Video", cv2.WND_PROP_VISIBLE) < 1:
