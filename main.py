@@ -4,7 +4,6 @@ from tkinter import filedialog
 import numpy as np
 
 def iniciar_captura_wifi():
-    # Inicia a captura via Wi-Fi
     captura = cv2.VideoCapture('http://192.168.2.115:8080/video')
     exibir_video(captura)
 
@@ -41,10 +40,13 @@ def exibir_video(captura):
             aplicar_subtrator_fundo = subtrator_fundo.apply(frame) 
 
             # 2° problema: ruídos no video
-            #   - solução: usar operador morfológico de abertura
+            #   - solução: tratar ruídos com operador morfológico de abertura
 
             elemento_estruturante = np.ones((5,5),np.uint8) # filtro 5x5
             operador_abertura = cv2.morphologyEx(aplicar_subtrator_fundo, cv2.MORPH_OPEN, elemento_estruturante)
+
+            # 3° problema: identificar pessoas
+            #   - solução: ?
 
             cv2.imshow("Video", cv2.resize(frame, (600, 400)))
             cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (600, 400)))
@@ -62,16 +64,16 @@ def exibir_video(captura):
     cv2.destroyAllWindows()
 
 # configuração da interface gráfica
-janela = tk.Tk()
-janela.title("Escolha a Fonte de Vídeo")
-janela.geometry("300x100")
+janela_principal = tk.Tk()
+janela_principal.title("Escolha a fonte de vídeo")
+janela_principal.geometry("300x100")
 
 # botão para iniciar captura via wi-Fi
-botao_wifi = tk.Button(janela, text="Captura da câmera via Wi-Fi", command=iniciar_captura_wifi)
+botao_wifi = tk.Button(janela_principal, text="Captura da câmera via Wi-Fi", command=iniciar_captura_wifi)
 botao_wifi.pack(pady=10)
 
 # botão para escolher vídeo de um diretório
-botao_video = tk.Button(janela, text="Escolher Vídeo", command=escolher_video)
+botao_video = tk.Button(janela_principal, text="Escolher Vídeo", command=escolher_video)
 botao_video.pack(pady=10)
 
-janela.mainloop()
+janela_principal.mainloop()
