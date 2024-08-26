@@ -50,7 +50,15 @@ def exibir_video(captura):
 
             bordas = cv2.Canny(operador_abertura, 50, 150)
             contornos, _ = cv2.findContours(bordas, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            frame_com_borda = frame
+
+            contAdulto = 0
+            contCrianca = 0
+            contAnimal = 0
+            
+            # formato BGR
+            corAdulto = (0, 255, 0) # verde
+            corCrianca = (255, 0, 0) # azul
+            corAnimal = (0, 0, 255) # vermelho
 
             # filtrar contornos com base na área
             for contorno in contornos:
@@ -65,7 +73,6 @@ def exibir_video(captura):
                     #print(largura, altura)
                     #print(proporcao)
                     #print(area)
-                    #print("\n")
 
                     # verificar as proposções e áreas (principalmente a área)!!!!!!!!!!!
 
@@ -86,27 +93,25 @@ def exibir_video(captura):
                     #   - proporção para animais será: 1 < prop. < 2.5, e 200 < area < 400
 
                     if (area > 400) and (0.2 < proporcao < 0.65):
-                        print("Adulto")
-                        label = "Adulto"
-                        cor = (0, 255, 0)  # Verde
-                        cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), cor, 2)
-                    elif (area > 400) and (0.65 <= proporcao < 0.7):
-                        print("Criança")
-                        label = "Criança"
-                        cor = (255, 255, 0)  # Amarelo
-                        cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), cor, 2)
-                    elif (area < 200 and area < 400) and (1 < proporcao < 2.5):
-                        print("Animal")
-                        label = "Animal"
-                        cor = (255, 0, 0)  # Azul
-                        cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), cor, 2)
+                        contAdulto +=1
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
+                    
+                    if (area > 400) and (0.65 <= proporcao < 0.7):
+                        contCrianca +=1
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
+                    
+                    if (area < 400) and (1 < proporcao < 2.5):
+                        contAnimal +=1
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
 
-                    cv2.rectangle(frame_com_borda, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
+                    #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
+                    cv2.putText(frame, "Adultos: " + str(contAdulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 1)
+                    cv2.putText(frame, "Criancas: " + str(contCrianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 1)
+                    cv2.putText(frame, "Animais: " + str(contAnimal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 1)
 
-            cv2.imshow("Video", cv2.resize(frame, (600, 400)))
             cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (600, 400)))
             cv2.imshow('Video tratado com operador aberto', cv2.resize(operador_abertura, (600, 400)))
-            cv2.imshow('Video com borda', cv2.resize(frame_com_borda, (600, 400)))
+            cv2.imshow("Video", cv2.resize(frame, (600, 400)))
 
             tecla = cv2.waitKey(1)
             if tecla == ord('q') or cv2.getWindowProperty("Video", cv2.WND_PROP_VISIBLE) < 1:
@@ -124,11 +129,9 @@ janela_principal = tk.Tk()
 janela_principal.title("Tipo de captura")
 janela_principal.geometry("300x100")
 
-# botão para iniciar captura via wi-Fi
 botao_wifi = tk.Button(janela_principal, text="Captura da câmera via Wi-Fi", command=iniciar_captura_wifi)
 botao_wifi.pack(pady=10)
 
-# botão para escolher vídeo de um diretório
 botao_video = tk.Button(janela_principal, text="Escolher Vídeo", command=escolher_video)
 botao_video.pack(pady=10)
 
