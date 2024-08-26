@@ -44,7 +44,7 @@ def exibir_video(captura):
             corCrianca = (255, 0, 0) # azul
             corAnimal = (0, 0, 255) # vermelho
 
-            # texto na tela com o contadores
+            # texto na tela com os contadores
             cv2.putText(frame, "Adultos: " + str(contAdulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 1)
             cv2.putText(frame, "Criancas: " + str(contCrianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 1)
             cv2.putText(frame, "Animais: " + str(contAnimal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 1)
@@ -122,8 +122,8 @@ def exibir_video(captura):
 
                     #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
 
-            cv2.imshow("Video com bordas", cv2.resize(frame, (400, 300)))
-            cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (400, 300)))
+            cv2.imshow("Video", cv2.resize(frame, (400, 300)))
+            cv2.imshow('Separar objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (400, 300)))
             cv2.imshow('Imagem binaria', cv2.resize(imagem_binaria, (400, 300)))
             cv2.imshow('Imagem aberta', cv2.resize(operador_abertura, (400, 300)))
             cv2.imshow('Imagem dilatada', cv2.resize(operador_dilatacao, (400, 300)))
