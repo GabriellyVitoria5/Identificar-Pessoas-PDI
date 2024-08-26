@@ -1,7 +1,7 @@
 import cv2
 import tkinter as tk
 from tkinter import filedialog
-import numpy as np
+import time
 
 def iniciar_captura_wifi():
     captura = cv2.VideoCapture('http://192.168.2.115:8080/video')
@@ -11,9 +11,8 @@ def gravar_webcam():
     captura = cv2.VideoCapture(0)
     exibir_video(captura)
 
-
 def escolher_video():
-    # abre uma janela para escolher um vídeo de um diretório
+    # abrir uma janela para escolher vídeo de um diretório
     caminho_video = filedialog.askopenfilename(title="Selecione um vídeo", 
                                                filetypes=(("Arquivos de vídeo", "*.mp4 *.avi *.mov"), ("Todos os arquivos", "*.*")))
     if caminho_video:
@@ -21,6 +20,10 @@ def escolher_video():
         exibir_video(captura)
 
 def exibir_video(captura):
+
+    contAdulto = 0
+    contCrianca = 0
+    contAnimal = 0
     
     if not captura.isOpened():
         print("Não foi possível abrir a captura de vídeo.")
@@ -35,19 +38,28 @@ def exibir_video(captura):
         try:
             if not retorno:
                 break
+            
+            # formato BGR
+            corAdulto = (0, 255, 0) # verde
+            corCrianca = (255, 0, 0) # azul
+            corAnimal = (0, 0, 255) # vermelho
+
+            # texto na tela com o contadores
+            cv2.putText(frame, "Adultos: " + str(contAdulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 1)
+            cv2.putText(frame, "Criancas: " + str(contCrianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 1)
+            cv2.putText(frame, "Animais: " + str(contAnimal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 1)
 
             # com o frame capturado, temos:
             #
             # 1° problema: separar objetos (pessoas e animais) do fundo/cenário
-            #   - solução 1: usar subtração para diferenciar mudanças de um frame para outro (movimento das pessoas)
-            #   - solução 2: usar função de subtrator de fundo do opencv (usa distribuições gaussianas e é bom para lidar com sombra dos aobjetos)
+            #   - solução: usar função de subtrator de fundo do opencv (usa distribuições gaussianas e é bom para lidar com sombra dos aobjetos)
 
             imagem_cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             aplicar_subtrator_fundo = subtrator_fundo.apply(imagem_cinza)
             retorno_th, imagem_binaria = cv2.threshold(aplicar_subtrator_fundo, 200, 255, cv2.THRESH_BINARY) # limpar sombras
 
             # 2° problema: ruídos no video
-            #   - solução: tratar ruídos com operadores morfológicoa
+            #   - solução: tratar ruídos com operadores morfológicos
 
             elemento_estruturante = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
             operador_abertura = cv2.morphologyEx(imagem_binaria, cv2.MORPH_OPEN, elemento_estruturante, iterations = 2)
@@ -55,22 +67,17 @@ def exibir_video(captura):
             operador_fechamento = cv2.morphologyEx(operador_dilatacao, cv2.MORPH_CLOSE, elemento_estruturante, iterations = 8)
 
             # 3° problema: identificar pessoas
-            #   - solução: encontrar bordar e cotornos usando algoritmo de Canny
+            #   - solução: encontrar bordas e cotornos usando algoritmo de Canny
 
             bordas = cv2.Canny(operador_fechamento, 50, 150)
             contornos, _ = cv2.findContours(bordas, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
-            contAdulto = 0
-            contCrianca = 0
-            contAnimal = 0
-            
-            # formato BGR
-            corAdulto = (0, 255, 0) # verde
-            corCrianca = (255, 0, 0) # azul
-            corAnimal = (0, 0, 255) # vermelho
-
-            # filtrar contornos com base na área
             for contorno in contornos:
+
+                #atualizar contadores
+                contAdulto = 0
+                contCrianca = 0
+                contAnimal = 0
 
                 # 4° problema: diferenciar contornos entre pessoas, crianças e animais
                 #   - solução: usar a área, altura e largura (proporcao) do contorno
@@ -103,29 +110,24 @@ def exibir_video(captura):
 
                     if (area > 400) and (0.2 < proporcao < 0.65):
                         contAdulto +=1
-                        #cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
                     
                     if (area > 400) and (0.65 <= proporcao < 0.7):
                         contCrianca +=1
-                        #cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
                     
                     if (area < 400) and (1 < proporcao < 2.5):
                         contAnimal +=1
-                        #cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
 
-                    cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
+                    #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
 
-                    cv2.putText(frame, "Adultos: " + str(contAdulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 1)
-                    cv2.putText(frame, "Criancas: " + str(contCrianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 1)
-                    cv2.putText(frame, "Animais: " + str(contAnimal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 1)
-
-            cv2.imshow("Video", cv2.resize(frame, (400, 300)))
+            cv2.imshow("Video com bordas", cv2.resize(frame, (400, 300)))
             cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (400, 300)))
             cv2.imshow('Imagem binaria', cv2.resize(imagem_binaria, (400, 300)))
             cv2.imshow('Imagem aberta', cv2.resize(operador_abertura, (400, 300)))
             cv2.imshow('Imagem dilatada', cv2.resize(operador_dilatacao, (400, 300)))
             cv2.imshow('Imagem fechada', cv2.resize(operador_fechamento, (400, 300)))
-            
 
             tecla = cv2.waitKey(1)
             if tecla == ord('q') or cv2.getWindowProperty("Video", cv2.WND_PROP_VISIBLE) < 1:
