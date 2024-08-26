@@ -7,6 +7,11 @@ def iniciar_captura_wifi():
     captura = cv2.VideoCapture('http://192.168.2.115:8080/video')
     exibir_video(captura)
 
+def gravar_webcam():
+    captura = cv2.VideoCapture(0)
+    exibir_video(captura)
+
+
 def escolher_video():
     # abre uma janela para escolher um vídeo de um diretório
     caminho_video = filedialog.askopenfilename(title="Selecione um vídeo", 
@@ -127,10 +132,13 @@ def exibir_video(captura):
 # configuração da interface gráfica
 janela_principal = tk.Tk()
 janela_principal.title("Tipo de captura")
-janela_principal.geometry("300x100")
+janela_principal.geometry("300x140")
 
 botao_wifi = tk.Button(janela_principal, text="Captura da câmera via Wi-Fi", command=iniciar_captura_wifi)
 botao_wifi.pack(pady=10)
+
+botao_webcam = tk.Button(janela_principal, text="Gravar vídeo da Webcam", command=gravar_webcam)
+botao_webcam.pack(pady=10)
 
 botao_video = tk.Button(janela_principal, text="Escolher Vídeo", command=escolher_video)
 botao_video.pack(pady=10)
