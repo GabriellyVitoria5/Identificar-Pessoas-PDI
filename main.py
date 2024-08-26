@@ -1,10 +1,9 @@
 import cv2
 import tkinter as tk
 from tkinter import filedialog
-import time
 
 def iniciar_captura_wifi():
-    captura = cv2.VideoCapture('http://192.168.2.115:8080/video')
+    captura = cv2.VideoCapture('http://192.168.2.115:8080/video') # alterar IP
     exibir_video(captura)
 
 def gravar_webcam():
@@ -74,7 +73,7 @@ def exibir_video(captura):
 
             for contorno in contornos:
 
-                #atualizar contadores
+                # atualizar contadores (erro no contador!!!!)
                 contAdulto = 0
                 contCrianca = 0
                 contAnimal = 0
@@ -91,6 +90,7 @@ def exibir_video(captura):
                     #print(area)
 
                     # verificar as proposções e áreas (principalmente a área)!!!!!!!!!!!
+                    # perguntar ao professor 
 
                     # Tabela de proporções: 
                     #
@@ -102,11 +102,13 @@ def exibir_video(captura):
                     # animais: tendem ao 2° caso com valores baixos
                     # 
                     # 1° caso:
-                    #   - proporção para adultos será: 0.2 < prop. < 0.65, e area > 1000
-                    #   - proporção para crianças será: 0.66 < prop. < 0.8, e 800 < area > 1000
+                    #   - heurística para adultos será: area > 400, e 0.2 < prop. < 0.65 
+                    #   - heurística para crianças será: area > 1000, e 0.65 <= prop. < 0.7 
                     #
                     # 2° caso:
-                    #   - proporção para animais será: 1 < prop. < 2.5, e 200 < area < 400
+                    #   - heurística para animais será: area < 600, e 1 < prop. < 2.5
+                    #
+                    # como tratar exceções para esses casos? ex: pessoa deitada, adulto baixo/criança alta 
 
                     if (area > 400) and (0.2 < proporcao < 0.65):
                         contAdulto +=1
@@ -116,7 +118,7 @@ def exibir_video(captura):
                         contCrianca +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
                     
-                    if (area < 400) and (1 < proporcao < 2.5):
+                    if (area < 600) and (1 < proporcao < 2.5):
                         contAnimal +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
 
