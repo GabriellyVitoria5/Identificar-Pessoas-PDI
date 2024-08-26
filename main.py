@@ -27,13 +27,13 @@ def exibir_video(captura):
         return
     
     # subtrair fundo
-    subtrator_fundo = cv2.createBackgroundSubtractorKNN() 
+    subtrator_fundo = cv2.createBackgroundSubtractorMOG2() 
 
     while captura.isOpened():
-        sucesso, frame = captura.read()
+        retorno, frame = captura.read()
 
         try:
-            if not sucesso:
+            if not retorno:
                 break
 
             # com o frame capturado, temos:
@@ -42,19 +42,23 @@ def exibir_video(captura):
             #   - solução 1: usar subtração para diferenciar mudanças de um frame para outro (movimento das pessoas)
             #   - solução 2: usar função de subtrator de fundo do opencv (usa distribuições gaussianas e é bom para lidar com sombra dos aobjetos)
 
-            aplicar_subtrator_fundo = subtrator_fundo.apply(frame) 
+            imagem_cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            aplicar_subtrator_fundo = subtrator_fundo.apply(imagem_cinza)
+            retorno_th, imagem_binaria = cv2.threshold(aplicar_subtrator_fundo, 200, 255, cv2.THRESH_BINARY) # limpar sombras
 
             # 2° problema: ruídos no video
-            #   - solução: tratar ruídos com operador morfológico de abertura
+            #   - solução: tratar ruídos com operadores morfológicoa
 
-            elemento_estruturante = np.ones((5,5),np.uint8) # filtro 5x5
-            operador_abertura = cv2.morphologyEx(aplicar_subtrator_fundo, cv2.MORPH_OPEN, elemento_estruturante)
+            elemento_estruturante = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            operador_abertura = cv2.morphologyEx(imagem_binaria, cv2.MORPH_OPEN, elemento_estruturante, iterations = 2)
+            operador_dilatacao = cv2.dilate(operador_abertura,elemento_estruturante, iterations = 8)
+            operador_fechamento = cv2.morphologyEx(operador_dilatacao, cv2.MORPH_CLOSE, elemento_estruturante, iterations = 8)
 
             # 3° problema: identificar pessoas
             #   - solução: encontrar bordar e cotornos usando algoritmo de Canny
 
-            bordas = cv2.Canny(operador_abertura, 50, 150)
-            contornos, _ = cv2.findContours(bordas, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            bordas = cv2.Canny(operador_fechamento, 50, 150)
+            contornos, _ = cv2.findContours(bordas, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
             contAdulto = 0
             contCrianca = 0
@@ -99,24 +103,29 @@ def exibir_video(captura):
 
                     if (area > 400) and (0.2 < proporcao < 0.65):
                         contAdulto +=1
-                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
+                        #cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
                     
                     if (area > 400) and (0.65 <= proporcao < 0.7):
                         contCrianca +=1
-                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
+                        #cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
                     
                     if (area < 400) and (1 < proporcao < 2.5):
                         contAnimal +=1
-                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
+                        #cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
 
-                    #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
+                    cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
+
                     cv2.putText(frame, "Adultos: " + str(contAdulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 1)
                     cv2.putText(frame, "Criancas: " + str(contCrianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 1)
                     cv2.putText(frame, "Animais: " + str(contAnimal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 1)
 
-            cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (600, 400)))
-            cv2.imshow('Video tratado com operador aberto', cv2.resize(operador_abertura, (600, 400)))
-            cv2.imshow("Video", cv2.resize(frame, (600, 400)))
+            cv2.imshow("Video", cv2.resize(frame, (400, 300)))
+            cv2.imshow('Video separando objetos do fundo', cv2.resize(aplicar_subtrator_fundo, (400, 300)))
+            cv2.imshow('Imagem binaria', cv2.resize(imagem_binaria, (400, 300)))
+            cv2.imshow('Imagem aberta', cv2.resize(operador_abertura, (400, 300)))
+            cv2.imshow('Imagem dilatada', cv2.resize(operador_dilatacao, (400, 300)))
+            cv2.imshow('Imagem fechada', cv2.resize(operador_fechamento, (400, 300)))
+            
 
             tecla = cv2.waitKey(1)
             if tecla == ord('q') or cv2.getWindowProperty("Video", cv2.WND_PROP_VISIBLE) < 1:
@@ -137,10 +146,10 @@ janela_principal.geometry("300x140")
 botao_wifi = tk.Button(janela_principal, text="Captura da câmera via Wi-Fi", command=iniciar_captura_wifi)
 botao_wifi.pack(pady=10)
 
-botao_webcam = tk.Button(janela_principal, text="Gravar vídeo da Webcam", command=gravar_webcam)
-botao_webcam.pack(pady=10)
-
 botao_video = tk.Button(janela_principal, text="Escolher Vídeo", command=escolher_video)
 botao_video.pack(pady=10)
+
+botao_webcam = tk.Button(janela_principal, text="Gravar vídeo da Webcam", command=gravar_webcam)
+botao_webcam.pack(pady=10)
 
 janela_principal.mainloop()
