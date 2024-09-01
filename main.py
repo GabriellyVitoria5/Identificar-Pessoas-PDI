@@ -61,7 +61,7 @@ def exibir_video(captura):
             #   - solução: tratar ruídos com operadores morfológicos
 
             elemento_estruturante = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-            operador_abertura = cv2.morphologyEx(imagem_binaria, cv2.MORPH_OPEN, elemento_estruturante, iterations = 2)
+            operador_abertura = cv2.morphologyEx(imagem_binaria, cv2.MORPH_OPEN, elemento_estruturante)
             operador_dilatacao = cv2.dilate(operador_abertura,elemento_estruturante, iterations = 8)
             operador_fechamento = cv2.morphologyEx(operador_dilatacao, cv2.MORPH_CLOSE, elemento_estruturante, iterations = 8)
 
@@ -82,7 +82,7 @@ def exibir_video(captura):
                 #   - solução: usar a área, altura e largura (proporcao) do contorno
 
                 area = cv2.contourArea(contorno)
-                if area > 200: # exlcuir áreas de valores muito pequenos
+                if area > 500: # exlcuir áreas de valores muito pequenos
                     x, y, largura, altura = cv2.boundingRect(contorno)
                     proporcao = largura / float(altura) 
                     #print(largura, altura)
@@ -102,23 +102,23 @@ def exibir_video(captura):
                     # animais: tendem ao 2° caso com valores baixos
                     # 
                     # 1° caso:
-                    #   - heurística para adultos será: area > 400, e 0.2 < prop. < 0.65 
-                    #   - heurística para crianças será: area > 1000, e 0.65 <= prop. < 0.7 
+                    #   - heurística para adultos será: area > 2400, 0.2 < prop. < 0.8, e altura >= 80 
+                    #   - heurística para crianças será: 1200 > area > 1200, e 0.3 < prop. < 0.8, e altura < 80  
                     #
                     # 2° caso:
-                    #   - heurística para animais será: area < 600, e 1 < prop. < 2.5
+                    #   - heurística para animais será: 1750 < area < 2500, e 1.1 < prop. < 2.7, e altura < 50 
                     #
-                    # como tratar exceções para esses casos? ex: pessoa deitada, adulto baixo/criança alta 
+                    # OBS: esses valores podem não funcionar com exceções, ex: pessoa deitada (largura é alta), adulto baixo/criança alta 
 
-                    if (area > 400) and (0.2 < proporcao < 0.65):
+                    if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
                         contAdulto +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
                     
-                    if (area > 400) and (0.65 <= proporcao < 0.7):
+                    if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
                         contCrianca +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
                     
-                    if (area < 600) and (1 < proporcao < 2.5):
+                    if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
                         contAnimal +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
 
@@ -150,7 +150,7 @@ janela_principal.geometry("300x140")
 botao_wifi = tk.Button(janela_principal, text="Captura da câmera via Wi-Fi", command=iniciar_captura_wifi)
 botao_wifi.pack(pady=10)
 
-botao_video = tk.Button(janela_principal, text="Escolher Vídeo", command=escolher_video)
+botao_video = tk.Button(janela_principal, text="Escolher vídeo", command=escolher_video)
 botao_video.pack(pady=10)
 
 botao_webcam = tk.Button(janela_principal, text="Gravar vídeo da Webcam", command=gravar_webcam)
