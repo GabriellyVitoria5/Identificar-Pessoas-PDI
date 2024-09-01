@@ -20,9 +20,10 @@ def escolher_video():
 
 def exibir_video(captura):
 
-    contAdulto = 0
-    contCrianca = 0
-    contAnimal = 0
+    cont_adulto = 0
+    cont_crianca = 0
+    cont_animal = 0
+    cont_frames = 0
     
     if not captura.isOpened():
         print("Não foi possível abrir a captura de vídeo.")
@@ -44,18 +45,18 @@ def exibir_video(captura):
             corAnimal = (0, 0, 255) # vermelho
 
             # texto na tela com os contadores
-            cv2.putText(frame, "Adultos: " + str(contAdulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 3)
-            cv2.putText(frame, "Criancas: " + str(contCrianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 3)
-            cv2.putText(frame, "Animais: " + str(contAnimal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 3)
+            cv2.putText(frame, "Adultos: " + str(cont_adulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 3)
+            cv2.putText(frame, "Criancas: " + str(cont_crianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 3)
+            cv2.putText(frame, "Animais: " + str(cont_animal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 3)
 
             # com o frame capturado, temos:
             #
             # 1° problema: separar objetos (pessoas e animais) do fundo/cenário
             #   - solução: usar função de subtrator de fundo do opencv (usa distribuições gaussianas e é bom para lidar com sombra dos aobjetos)
 
-            imagem_cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            aplicar_subtrator_fundo = subtrator_fundo.apply(imagem_cinza)
-            retorno_th, imagem_binaria = cv2.threshold(aplicar_subtrator_fundo, 200, 255, cv2.THRESH_BINARY) # limpar sombras
+            frame_cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            aplicar_subtrator_fundo = subtrator_fundo.apply(frame_cinza)
+            _, imagem_binaria = cv2.threshold(aplicar_subtrator_fundo, 200, 255, cv2.THRESH_BINARY) # limpar sombras
 
             # 2° problema: ruídos no video
             #   - solução: tratar ruídos com operadores morfológicos
@@ -70,13 +71,31 @@ def exibir_video(captura):
 
             bordas = cv2.Canny(operador_fechamento, 50, 150)
             contornos, _ = cv2.findContours(bordas, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            
+            cont_frames += 1
+
+            # Atualiza contadores a cada 10 frames
+            if cont_frames % 10 == 0:
+                cont_adulto = 0
+                cont_crianca = 0
+                cont_animal = 0
+
+                for contorno in contornos:
+                    area = cv2.contourArea(contorno)
+                    if area > 500:
+                        x, y, largura, altura = cv2.boundingRect(contorno)
+                        proporcao = largura / float(altura)
+
+                        if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
+                            cont_adulto += 1
+                        
+                        if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
+                            cont_crianca += 1
+                        
+                        if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
+                            cont_animal += 1
 
             for contorno in contornos:
-
-                # atualizar contadores (erro no contador!!!!)
-                contAdulto = 0
-                contCrianca = 0
-                contAnimal = 0
 
                 # 4° problema: diferenciar contornos entre pessoas, crianças e animais
                 #   - solução: usar a área, altura e largura (proporcao) do contorno
@@ -89,10 +108,7 @@ def exibir_video(captura):
                     #print(proporcao)
                     #print(area)
 
-                    # verificar as proposções e áreas (principalmente a área)!!!!!!!!!!!
-                    # perguntar ao professor 
-
-                    # Tabela de proporções: 
+                    # Tabela de heurísticas: 
                     #
                     # 1° caso: proporcao entre 0 e 1 -> altura é maior, valores altos indicam altura e largula próximos
                     # 2° caso: proporcao maior igual que 1 -> largura é maior, valores altos indicam larguras grandes
@@ -111,15 +127,12 @@ def exibir_video(captura):
                     # OBS: esses valores podem não funcionar com exceções, ex: pessoa deitada (largura é alta), adulto baixo/criança alta 
 
                     if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
-                        contAdulto +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
                     
                     if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
-                        contCrianca +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
                     
                     if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
-                        contAnimal +=1
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
 
                     #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
