@@ -74,11 +74,13 @@ def exibir_video(captura):
             
             cont_frames += 1
 
-            # Atualiza contadores a cada 10 frames
+            # atualizar contadores mais devagar 
             if cont_frames % 10 == 0:
                 cont_adulto = 0
                 cont_crianca = 0
                 cont_animal = 0
+
+                cont_contornos = []
 
                 for contorno in contornos:
                     area = cv2.contourArea(contorno)
@@ -86,19 +88,28 @@ def exibir_video(captura):
                         x, y, largura, altura = cv2.boundingRect(contorno)
                         proporcao = largura / float(altura)
 
-                        if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
-                            cont_adulto += 1
-                        
-                        if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
-                            cont_crianca += 1
-                        
-                        if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
-                            cont_animal += 1
+                        # não contar contornos sobrepostos (evitar contador duplicado)
+                        sobreposto = False
+                        for c_x, c_y, c_largura, c_altura in cont_contornos:
+                            if (x < c_x + c_largura and x + largura > c_x and 
+                                y < c_y + c_altura and y + altura > c_y):
+                                sobreposto = True
+                                break
+
+                        if not sobreposto:
+                            cont_contornos.append((x, y, largura, altura))
+                            if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
+                                cont_adulto += 1
+                            
+                            if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
+                                cont_crianca += 1
+                            
+                            if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
+                                cont_animal += 1
 
             for contorno in contornos:
 
-                # 4° problema: diferenciar contornos entre pessoas, crianças e animais
-                #   - solução: usar a área, altura e largura (proporcao) do contorno
+                
 
                 area = cv2.contourArea(contorno)
                 if area > 500: # exlcuir áreas de valores muito pequenos
@@ -124,7 +135,7 @@ def exibir_video(captura):
                     # 2° caso:
                     #   - heurística para animais será: 1750 < area < 2500, e 1.1 < prop. < 2.7, e altura < 50 
                     #
-                    # OBS: esses valores podem não funcionar com exceções, ex: pessoa deitada (largura é alta), adulto baixo/criança alta 
+                    # OBS: esses valores podem não funcionar com exceções, ex: pessoa deitada (largura é alta), adulto baixo/criança alta, animal visto de frente 
 
                     if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
