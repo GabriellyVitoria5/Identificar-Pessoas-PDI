@@ -32,6 +32,11 @@ def exibir_video(captura):
     # subtrair fundo
     subtrator_fundo = cv2.createBackgroundSubtractorMOG2() 
 
+    # formato BGR
+    cor_adulto = (0, 255, 0) # verde
+    cor_crianca = (255, 0, 0) # azul
+    cor_animal = (0, 0, 255) # vermelho
+
     while captura.isOpened():
         retorno, frame = captura.read()
 
@@ -39,15 +44,11 @@ def exibir_video(captura):
             if not retorno:
                 break
             
-            # formato BGR
-            corAdulto = (0, 255, 0) # verde
-            corCrianca = (255, 0, 0) # azul
-            corAnimal = (0, 0, 255) # vermelho
 
             # texto na tela com os contadores
-            cv2.putText(frame, "Adultos: " + str(cont_adulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAdulto, 3)
-            cv2.putText(frame, "Criancas: " + str(cont_crianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corCrianca, 3)
-            cv2.putText(frame, "Animais: " + str(cont_animal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, corAnimal, 3)
+            cv2.putText(frame, "Adultos: " + str(cont_adulto), (0, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, cor_adulto, 3)
+            cv2.putText(frame, "Criancas: " + str(cont_crianca), (200, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, cor_crianca, 3)
+            cv2.putText(frame, "Animais: " + str(cont_animal), (410, frame.shape[0] - 10), cv2.FONT_HERSHEY_TRIPLEX, 1, cor_animal, 3)
 
             # com o frame capturado, temos:
             #
@@ -73,6 +74,9 @@ def exibir_video(captura):
             contornos, _ = cv2.findContours(bordas, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             
             cont_frames += 1
+
+            # 4° problema: diferenciar contornos entre pessoas, crianças e animais e fazer contagem
+            #   - solução: diferenciar usando a área, proporcao e altura do contorno everificar se um contorno está sendo contado mais de uma vez  
 
             # atualizar contadores mais devagar 
             if cont_frames % 10 == 0:
@@ -108,43 +112,19 @@ def exibir_video(captura):
                                 cont_animal += 1
 
             for contorno in contornos:
-
-                
-
                 area = cv2.contourArea(contorno)
-                if area > 500: # exlcuir áreas de valores muito pequenos
+                if area > 500: # exlcuir áreas pequenas
                     x, y, largura, altura = cv2.boundingRect(contorno)
                     proporcao = largura / float(altura) 
-                    #print(largura, altura)
-                    #print(proporcao)
-                    #print(area)
-
-                    # Tabela de heurísticas: 
-                    #
-                    # 1° caso: proporcao entre 0 e 1 -> altura é maior, valores altos indicam altura e largula próximos
-                    # 2° caso: proporcao maior igual que 1 -> largura é maior, valores altos indicam larguras grandes
-                    #
-                    # adultos: tendem ao 1° caso com valores baixos para médios
-                    # crianças: temdem ao 1° caso com valores médios para altos
-                    # animais: tendem ao 2° caso com valores baixos
-                    # 
-                    # 1° caso:
-                    #   - heurística para adultos será: area > 2400, 0.2 < prop. < 0.8, e altura >= 80 
-                    #   - heurística para crianças será: 1200 > area > 1200, e 0.3 < prop. < 0.8, e altura < 80  
-                    #
-                    # 2° caso:
-                    #   - heurística para animais será: 1750 < area < 2500, e 1.1 < prop. < 2.7, e altura < 50 
-                    #
-                    # OBS: esses valores podem não funcionar com exceções, ex: pessoa deitada (largura é alta), adulto baixo/criança alta, animal visto de frente 
 
                     if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
-                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAdulto, 2)
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), cor_adulto, 2)
                     
                     if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
-                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corCrianca, 2)
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), cor_crianca, 2)
                     
                     if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
-                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), corAnimal, 2)
+                        cv2.rectangle(frame, (x, y), (x + largura, y + altura), cor_animal, 2)
 
                     #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
 
