@@ -102,13 +102,13 @@ def exibir_video(captura):
 
                         if not sobreposto:
                             cont_contornos.append((x, y, largura, altura))
-                            if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
+                            if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 83):
                                 cont_adulto += 1
                             
-                            if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
+                            if (1200 < area < 7000) and (0.3 < proporcao < 0.86) and (45 < altura < 83):
                                 cont_crianca += 1
                             
-                            if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
+                            if (1700 < area < 3000) and (1.1 <= proporcao < 2.7) and (altura < 50):
                                 cont_animal += 1
 
             for contorno in contornos:
@@ -117,13 +117,13 @@ def exibir_video(captura):
                     x, y, largura, altura = cv2.boundingRect(contorno)
                     proporcao = largura / float(altura) 
 
-                    if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 80):
+                    if (area > 2400) and (0.2 < proporcao < 0.8) and (altura >= 83):
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), cor_adulto, 2)
                     
-                    if (1200 < area < 7000) and (0.3 < proporcao < 0.8) and (45 < altura < 80):
+                    if (1200 < area < 7000) and (0.3 < proporcao < 0.86) and (45 < altura < 83):
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), cor_crianca, 2)
                     
-                    if (1750 < area < 2500) and (1.1 <= proporcao < 2.7) and (altura < 50):
+                    if (1700 < area < 3000) and (1.1 <= proporcao < 2.7) and (altura < 50):
                         cv2.rectangle(frame, (x, y), (x + largura, y + altura), cor_animal, 2)
 
                     #cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
